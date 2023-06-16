@@ -1,0 +1,6 @@
+ProjectID - instagram-clone-469d2
+Platform  Firebase App Id
+web       1:251517331715:web:c9b37c734b9377ec73e136
+android   1:251517331715:android:86d6380efedf7e0373e136
+ios       1:251517331715:ios:f76a2287476dc33973e136
+macos     1:251517331715:ios:85fbb264edc3bb2473e136
