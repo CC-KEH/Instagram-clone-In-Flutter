@@ -1,7 +1,10 @@
+import 'dart:math';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:instagram_clone/screens/signup.dart';
 import 'package:instagram_clone/utils/Colors.dart';
 import 'package:instagram_clone/widgets/text_field_Input.dart';
 
@@ -23,10 +26,15 @@ class _LoginPageState extends State<LoginPage> {
     _passwordController.dispose();
   }
 
-  Future login() async {
-    try {} catch (e, s) {
-      print(s);
+  Future login(String email,String passwd,) async {
+    String res = "Error in login function";
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(email: email, password: passwd);
+      res = "Successfully login";
+    } catch (e) {
+      res = e.toString();
     }
+    return res;
   }
 
   @override
@@ -73,7 +81,9 @@ class _LoginPageState extends State<LoginPage> {
               ),
               //Login Button
               GestureDetector(
-                onTap: () {},
+                onTap: () async{
+                  await login(_emailController.text,_passwordController.text);
+                },
                 child: Container(
                   width: double.infinity,
                   height: 50,
@@ -113,12 +123,17 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(
                     width: 5,
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: const Text(
-                      "Sign up.",
-                      style: TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.bold),
+                  GestureDetector(
+                    onTap: (){
+
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: const Text(
+                        "Sign up.",
+                        style: TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                 ],
