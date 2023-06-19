@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:instagram_clone/screens/signup.dart';
 import 'package:instagram_clone/utils/Colors.dart';
+import 'package:instagram_clone/utils/utils.dart';
 import 'package:instagram_clone/widgets/text_field_Input.dart';
 
 class LoginPage extends StatefulWidget {
@@ -18,6 +19,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool _isloading = false;
 
   @override
   void dispose() {
@@ -26,13 +28,30 @@ class _LoginPageState extends State<LoginPage> {
     _passwordController.dispose();
   }
 
-  Future login(String email,String passwd,) async {
+  Future login(
+    String email,
+    String passwd,
+  ) async {
     String res = "Error in login function";
+    setState(() {
+      _isloading = true;
+    });
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(email: email, password: passwd);
-      res = "Successfully login";
+      if (email.isNotEmpty && passwd.isNotEmpty) {
+        await FirebaseAuth.instance
+            .signInWithEmailAndPassword(email: email, password: passwd);
+        res = "Successfully login";
+      } else {
+        showSnackBar('Enter complete details', context);
+      }
     } catch (e) {
       res = e.toString();
+    }
+    setState(() {
+      _isloading = false;
+    });
+    if (res != 'Successfully login') {
+      showSnackBar(res, context);
     }
     return res;
   }
@@ -81,8 +100,8 @@ class _LoginPageState extends State<LoginPage> {
               ),
               //Login Button
               GestureDetector(
-                onTap: () async{
-                  await login(_emailController.text,_passwordController.text);
+                onTap: () async {
+                  await login(_emailController.text, _passwordController.text);
                 },
                 child: Container(
                   width: double.infinity,
@@ -96,10 +115,16 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                     ),
                   ),
-                  child: const Text(
-                    'Log in',
-                    style: TextStyle(color: Colors.white, fontSize: 20),
-                  ),
+                  child: _isloading
+                      ? const Center(
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text(
+                          'Log in',
+                          style: TextStyle(color: Colors.white, fontSize: 20),
+                        ),
                 ),
               ),
               const SizedBox(
@@ -124,8 +149,8 @@ class _LoginPageState extends State<LoginPage> {
                     width: 5,
                   ),
                   GestureDetector(
-                    onTap: (){
-
+                    onTap: () {
+                      Navigator.push(context,MaterialPageRoute(builder: (context)=>const SignupPage()));
                     },
                     child: Container(
                       padding: const EdgeInsets.symmetric(vertical: 8),

@@ -4,6 +4,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:instagram_clone/methods/storage.dart';
+import 'package:instagram_clone/models/user.dart' as model;
+import 'package:instagram_clone/screens/login.dart';
+import 'package:instagram_clone/utils/utils.dart';
 import 'package:instagram_clone/widgets/text_field_Input.dart';
 
 class SignupPage extends StatefulWidget {
@@ -14,53 +18,82 @@ class SignupPage extends StatefulWidget {
 }
 
 class _SignupPageState extends State<SignupPage> {
-  final TextEditingController _emailController = new TextEditingController();
-  final TextEditingController _passwdController = new TextEditingController();
-  final TextEditingController _usernameController = new TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwdController = TextEditingController();
+  final TextEditingController _usernameController = TextEditingController();
+  bool _isLoading = false;
   Uint8List? _avatar;
-  Future<String> signup(String email, String passwd, String userName,Uint8List pfp) async {
-    String res = 'Some error in Signup function';
-    try {
-      if(email.isNotEmpty || passwd.isNotEmpty || userName.isNotEmpty ){
-        //Create User Account
-        UserCredential cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-            email: email,
-            password: passwd,
 
+  Future<String> signup(
+      String email, String passwd, String userName, Uint8List pfp) async {
+    String res = 'Some error in Signup function';
+    setState(() {
+      _isLoading = true;
+    });
+    try {
+      if (email.isNotEmpty || passwd.isNotEmpty || userName.isNotEmpty) {
+        //Create User Account
+        UserCredential cred =
+            await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: email,
+          password: passwd,
         );
+
+        //Store Avatar to Database
+        String photoUrl =
+            await StorageMethods().uploadImage('avatar', pfp, false);
+
         //Add user details to database
-        await FirebaseFirestore.instance.collection('users').doc(cred.user!.uid).set({
-          'username': userName,
-          'ID': cred.user!.uid,
-          'email': email,
-          'password': passwd,
-          'avatar' : pfp,
-          'followers' : [],
-          'following' : [],
-        });
+        model.User user = model.User(
+          uuid: cred.user!.uid,
+          email: email,
+          userName: userName,
+          password: passwd,
+          avatarUrl: photoUrl,
+          followers: [],
+          following: [],
+        );
+
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(cred.user!.uid)
+            .set(
+              user.toJson(),
+            );
         String res = 'success';
+      }
+    } on FirebaseAuthException catch (err) {
+      if (err.code == 'invalid-email') {
+        res = 'Email is badly formatted';
+      } else if (err.code == 'weak-password') {
+        res = 'Password is weak';
+      }
+    } catch (err) {
+      res = err.toString();
     }
-    } catch (e) {
-      res = e.toString();
+    setState(() {
+      _isLoading = false;
+    });
+    if (res != 'success') {
+      showSnackBar(res, context);
     }
     return res;
   }
 
-  void selectImage() async{
+  void selectImage() async {
     Uint8List im = await pickImage(ImageSource.gallery);
     setState(() {
       _avatar = im;
     });
   }
 
-   pickImage(ImageSource source) async {
+  pickImage(ImageSource source) async {
     ImagePicker img = ImagePicker();
     XFile? _file = await img.pickImage(source: source);
-    if(_file != null){
+    if (_file != null) {
       return await _file.readAsBytes();
     }
     print('No image selected!');
-
   }
 
   @override
@@ -91,19 +124,24 @@ class _SignupPageState extends State<SignupPage> {
                 // AVATAR
                 Stack(
                   children: [
-                    _avatar != null ? CircleAvatar(
-                      radius: 64,
-                      backgroundImage: MemoryImage(_avatar!),
-                    ) : const CircleAvatar(
-                      radius: 64,
-                      backgroundImage: NetworkImage('https://t3.ftcdn.net/jpg/03/64/62/36/360_F_364623623_ERzQYfO4HHHyawYkJ16tREsizLyvcaeg.jpg'),
-                    ),
+                    _avatar != null
+                        ? CircleAvatar(
+                            radius: 64,
+                            backgroundImage: MemoryImage(_avatar!),
+                          )
+                        : const CircleAvatar(
+                            radius: 64,
+                            backgroundImage: NetworkImage(
+                                'https://cdn.pixabay.com/photo/2023/03/06/11/39/ai-generated-7833307_1280.jpg'),
+                          ),
                     Positioned(
                       bottom: -10,
                       left: 80,
                       child: IconButton(
-                        onPressed: () {selectImage();},
-                        icon: Icon(Icons.add_a_photo_outlined),
+                        onPressed: () {
+                          selectImage();
+                        },
+                        icon: const Icon(Icons.add_a_photo_outlined),
                       ),
                     ),
                   ],
@@ -156,31 +194,49 @@ class _SignupPageState extends State<SignupPage> {
                         ),
                       ),
                     ),
-                    child: const Text(
-                      'Sign up',
-                      style: TextStyle(color: Colors.white, fontSize: 20),
-                    ),
+                    child: _isLoading
+                        ? const Center(
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text(
+                            'Sign up',
+                            style: TextStyle(color: Colors.white, fontSize: 20),
+                          ),
                   ),
                 ),
                 const SizedBox(height: 12),
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 8.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Already have an account?',
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: const Text(
+                        "Already have an account?",
                         style: TextStyle(color: Colors.white),
                       ),
-                      Text(
-                        ' Log in.',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
+                    ),
+                    const SizedBox(
+                      width: 5,
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const LoginPage()));
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: const Text(
+                          "Log in.",
+                          style: TextStyle(
+                              color: Colors.white, fontWeight: FontWeight.bold),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
               ],
@@ -189,6 +245,5 @@ class _SignupPageState extends State<SignupPage> {
         ),
       ),
     );
-
   }
 }
