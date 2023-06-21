@@ -1,6 +1,7 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:instagram_clone/utils/Colors.dart';
-import 'package:instagram_clone/utils/global_vars.dart';
 
 class AddPostScreen extends StatefulWidget {
   const AddPostScreen({super.key});
@@ -10,8 +11,10 @@ class AddPostScreen extends StatefulWidget {
 }
 
 class _AddPostScreenState extends State<AddPostScreen> {
-  void handlePost() {}
   int _selectedpage = 2;
+  Uint8List? _post;
+  List<String> _selectedImages = [];
+  final ImagePicker _imagePicker = ImagePicker();
   late PageController pageController;
 
   @override
@@ -24,6 +27,16 @@ class _AddPostScreenState extends State<AddPostScreen> {
   void dispose() {
     super.dispose();
     pageController.dispose();
+  }
+
+  Future<void> _selectImage() async {
+    final XFile? pickedImage =
+    await _imagePicker.pickImage(source: ImageSource.gallery);
+    if (pickedImage != null) {
+      setState(() {
+        _selectedImages.add(pickedImage.path);
+      });
+    }
   }
 
   void navigationTap(int page) {
@@ -51,58 +64,62 @@ class _AddPostScreenState extends State<AddPostScreen> {
         actions: [
           IconButton(
             iconSize: 35,
-            onPressed: () {},
+            onPressed: () async {
+              // await StorageMethods().uploadImage(
+              //     'posts', _selectedImages[index], true);
+            },
             icon: const Icon(Icons.arrow_forward),
             color: Colors.blueAccent,
           )
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Container(
-              height: 250,
-              width: double.infinity,
-              decoration: const BoxDecoration(
-                  image: DecorationImage(
-                      image: NetworkImage(
-                          "https://cdn.pixabay.com/photo/2023/03/06/11/39/ai-generated-7833307_1280.jpg"),
-                      fit: BoxFit.cover)),
+      body: Column(
+        children: [
+          Expanded(
+            child: Row(
+              children: [
+                Expanded(
+                  child: _selectedImages.isNotEmpty
+                      ? ListView.builder(
+                    itemCount: _selectedImages.length,
+                    itemBuilder: (context, index) {
+                      return Image.network(_selectedImages[index]);
+                    },
+                  )
+                      : Placeholder(),
+                ),
+              ],
             ),
-            Container(
-              height: 500,
-              alignment: Alignment.bottomCenter,
-              width: double.infinity,
-              color: Colors.blueAccent,
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 137,
-                        height: 137,
-                        decoration: BoxDecoration(
-                            border: Border.all(), color: Colors.amber),
+          ),
+          Container(
+            height: 500,
+            alignment: Alignment.bottomCenter,
+            width: double.infinity,
+            color: Colors.blueAccent,
+            child: Expanded(
+              child: GridView.builder(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 4.0,
+                    mainAxisSpacing: 4.0),
+                itemCount: _selectedImages.length + 1,
+                itemBuilder: (context, index) {
+                  if (index < _selectedImages.length) {
+                    return Image.network(_selectedImages[index]);
+                  } else {
+                    return Container(
+                      color: Colors.grey[200],
+                      child: IconButton(
+                        icon: const Icon(Icons.add),
+                        onPressed: _selectImage,
                       ),
-                      Container(
-                        width: 137,
-                        height: 137,
-                        decoration: BoxDecoration(
-                            border: Border.all(), color: Colors.amber),
-                      ),
-                      Container(
-                        width: 137,
-                        height: 137,
-                        decoration: BoxDecoration(
-                            border: Border.all(), color: Colors.amber),
-                      ),
-                    ],
-                  ),
-                ],
+                    );
+                  }
+                },
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

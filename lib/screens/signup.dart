@@ -85,7 +85,6 @@ class _SignupPageState extends State<SignupPage> {
       _avatar = im;
     });
   }
-
   pickImage(ImageSource source) async {
     ImagePicker img = ImagePicker();
     XFile? _file = await img.pickImage(source: source);
