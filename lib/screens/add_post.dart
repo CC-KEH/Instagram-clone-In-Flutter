@@ -12,10 +12,10 @@ class AddPostScreen extends StatefulWidget {
 
 class _AddPostScreenState extends State<AddPostScreen> {
   int _selectedpage = 2;
+  late PageController pageController;
   Uint8List? _post;
   List<String> _selectedImages = [];
   final ImagePicker _imagePicker = ImagePicker();
-  late PageController pageController;
 
   @override
   void initState() {

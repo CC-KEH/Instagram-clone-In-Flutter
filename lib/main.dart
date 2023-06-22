@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:instagram_clone/responsive/mobile_layout.dart';
 import 'package:instagram_clone/responsive/responsive_layout.dart';
 import 'package:instagram_clone/responsive/web_layout.dart';
+import 'package:instagram_clone/screens/contacts.dart';
 import 'package:instagram_clone/screens/login.dart';
 import 'package:instagram_clone/screens/signup.dart';
 import 'package:instagram_clone/utils/Colors.dart';
@@ -51,7 +52,7 @@ class MyApp extends StatelessWidget {
               ),
             );
           }
-          return const LoginPage();
+          return const ContactsScreen();
         },
       ),
     );
