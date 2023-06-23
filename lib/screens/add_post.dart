@@ -1,7 +1,10 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:instagram_clone/providers/user_provider.dart';
 import 'package:instagram_clone/utils/Colors.dart';
+import 'package:provider/provider.dart';
+import '../models/user.dart' as model;
 
 class AddPostScreen extends StatefulWidget {
   const AddPostScreen({super.key});
@@ -11,116 +14,135 @@ class AddPostScreen extends StatefulWidget {
 }
 
 class _AddPostScreenState extends State<AddPostScreen> {
-  int _selectedpage = 2;
-  late PageController pageController;
-  Uint8List? _post;
-  List<String> _selectedImages = [];
-  final ImagePicker _imagePicker = ImagePicker();
-
-  @override
-  void initState() {
-    super.initState();
-    pageController = PageController();
-  }
-
-  @override
-  void dispose() {
-    super.dispose();
-    pageController.dispose();
-  }
-
-  Future<void> _selectImage() async {
-    final XFile? pickedImage =
-    await _imagePicker.pickImage(source: ImageSource.gallery);
-    if (pickedImage != null) {
-      setState(() {
-        _selectedImages.add(pickedImage.path);
-      });
+  Uint8List? _file;
+  final TextEditingController _captionController = TextEditingController();
+  pickImage(ImageSource source) async {
+    ImagePicker img = ImagePicker();
+    XFile? _file = await img.pickImage(source: source);
+    if (_file != null) {
+      return await _file.readAsBytes();
     }
+    print('No image selected!');
   }
 
-  void navigationTap(int page) {
-    pageController.jumpToPage(page);
-  }
-
-  void onPageChanged(int page) {
-    setState(() {
-      _selectedpage = page;
-    });
+  _selectImage(BuildContext context) async {
+    return showDialog(
+      context: context,
+      builder: (context) {
+        return SimpleDialog(
+          title: const Text('Create a post'),
+          children: [
+            SimpleDialogOption(
+              padding: const EdgeInsets.all(20),
+              child: const Text('Take a photo'),
+              onPressed: () async {
+                Navigator.of(context).pop();
+                Uint8List file = await pickImage(ImageSource.camera);
+                setState(() {
+                  _file = file;
+                });
+              },
+            ),
+            SimpleDialogOption(
+              padding: const EdgeInsets.all(20),
+              child: const Text('Choose from gallery'),
+              onPressed: () async {
+                Navigator.of(context).pop();
+                Uint8List file = await pickImage(ImageSource.gallery);
+                setState(() {
+                  _file = file;
+                });
+              },
+            ),
+            SimpleDialogOption(
+              padding: const EdgeInsets.all(20),
+              child: const Text('Cancel'),
+              onPressed: () async {
+                Navigator.of(context).pop();
+              },
+            )
+          ],
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    int _previewHeight = 100;
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('New post'),
-        backgroundColor: mobileBackgroundColor,
-        leading: IconButton(
-          iconSize: 40,
-          icon: const Icon(Icons.close),
-          onPressed: () {},
-        ),
-        actions: [
-          IconButton(
-            iconSize: 35,
-            onPressed: () async {
-              // await StorageMethods().uploadImage(
-              //     'posts', _selectedImages[index], true);
-            },
-            icon: const Icon(Icons.arrow_forward),
-            color: Colors.blueAccent,
+    final model.User user = Provider.of<UserProvider>(context).getUser;
+    return _file == null
+        ? Center(
+            child: IconButton(
+              icon: const Icon(Icons.upload),
+              onPressed: () => _selectImage(context),
+            ),
           )
-        ],
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: Row(
+        : Scaffold(
+            appBar: AppBar(
+              title: const Text('New post'),
+              backgroundColor: mobileBackgroundColor,
+              leading: IconButton(
+                iconSize: 40,
+                icon: const Icon(Icons.close),
+                onPressed: () {},
+              ),
+              actions: [
+                IconButton(
+                  iconSize: 35,
+                  onPressed: () async {
+                    // await StorageMethods().uploadImage(
+                    //     'posts', _selectedImages[index], true);
+                  },
+                  icon: const Icon(Icons.arrow_forward),
+                  color: Colors.blueAccent,
+                )
+              ],
+            ),
+            body: Column(
               children: [
-                Expanded(
-                  child: _selectedImages.isNotEmpty
-                      ? ListView.builder(
-                    itemCount: _selectedImages.length,
-                    itemBuilder: (context, index) {
-                      return Image.network(_selectedImages[index]);
-                    },
-                  )
-                      : Placeholder(),
+                const SizedBox(
+                  height: 20,
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                     CircleAvatar(
+                      backgroundImage: NetworkImage(
+                          user.avatarUrl),
+                    ),
+                    SizedBox(
+                      width: MediaQuery.of(context).size.width * 0.4,
+                      child: TextField(
+                        controller: _captionController,
+                        decoration: const InputDecoration(
+                          hintText: 'Write a caption...',
+                          border: InputBorder.none,
+                        ),
+                        maxLines: 8,
+                      ),
+                    ),
+                    SizedBox(
+                      height: 45,
+                      width: 45,
+                      child: AspectRatio(
+                        aspectRatio: 487 / 451,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            image: DecorationImage(
+                              image: MemoryImage(_file!),
+                              fit: BoxFit.fill,
+                              alignment: FractionalOffset.topCenter,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const Divider(),
+                  ],
                 ),
               ],
             ),
-          ),
-          Container(
-            height: 500,
-            alignment: Alignment.bottomCenter,
-            width: double.infinity,
-            color: Colors.blueAccent,
-            child: Expanded(
-              child: GridView.builder(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: 4.0,
-                    mainAxisSpacing: 4.0),
-                itemCount: _selectedImages.length + 1,
-                itemBuilder: (context, index) {
-                  if (index < _selectedImages.length) {
-                    return Image.network(_selectedImages[index]);
-                  } else {
-                    return Container(
-                      color: Colors.grey[200],
-                      child: IconButton(
-                        icon: const Icon(Icons.add),
-                        onPressed: _selectImage,
-                      ),
-                    );
-                  }
-                },
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
+          );
   }
 }

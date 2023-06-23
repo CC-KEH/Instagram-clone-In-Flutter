@@ -23,8 +23,9 @@ class _SignupPageState extends State<SignupPage> {
   final TextEditingController _usernameController = TextEditingController();
   bool _isLoading = false;
   Uint8List? _avatar;
-  Future<String> signup(
-      String email, String passwd, String userName, Uint8List pfp) async {
+
+  //TODO: ADD THIS TO AUTH CLASS
+  Future<String> signup(String email, String passwd, String userName, Uint8List pfp) async {
     String res = 'Some error in Signup function';
     setState(() {
       _isLoading = true;
@@ -44,7 +45,7 @@ class _SignupPageState extends State<SignupPage> {
 
         //Add user details to database
         model.User user = model.User(
-          uuid: cred.user!.uid,
+          uid: cred.user!.uid,
           email: email,
           userName: userName,
           password: passwd,
