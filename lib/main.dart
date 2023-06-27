@@ -1,37 +1,47 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:instagram_clone/providers/user_provider.dart';
 import 'package:instagram_clone/responsive/mobile_layout.dart';
 import 'package:instagram_clone/responsive/responsive_layout.dart';
 import 'package:instagram_clone/responsive/web_layout.dart';
-import 'package:instagram_clone/screens/login.dart';
-import 'package:instagram_clone/utils/Colors.dart';
-import 'package:firebase_core/firebase_core.dart';
+import 'package:instagram_clone/screens/login_screen.dart';
+import 'package:instagram_clone/utils/colors.dart';
 import 'package:provider/provider.dart';
-import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+
+  // initialise app based on platform- web or mobile
+  if (kIsWeb) {
+    await Firebase.initializeApp(
+      options: const FirebaseOptions(
+          apiKey: "AIzaSyCZ-xrXqD5D19Snauto-Fx_nLD7PLrBXGM",
+          appId: "1:585119731880:web:eca6e4b3c42a755cee329d",
+          messagingSenderId: "585119731880",
+          projectId: "instagram-clone-4cea4",
+          storageBucket: 'instagram-clone-4cea4.appspot.com'
+      ),
+    );
+  } else {
+    await Firebase.initializeApp();
+  }
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(
-          create: (_) => UserProvider(),
-        )
+        ChangeNotifierProvider(create: (_) => UserProvider(),),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        title: 'Instagram',
+        title: 'Instagram Clone',
         theme: ThemeData.dark().copyWith(
           scaffoldBackgroundColor: mobileBackgroundColor,
         ),
@@ -39,25 +49,28 @@ class MyApp extends StatelessWidget {
           stream: FirebaseAuth.instance.authStateChanges(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.active) {
+              // Checking if the snapshot has any data or not
               if (snapshot.hasData) {
+                // if snapshot has data which means user is logged in then we check the width of screen and accordingly display the screen layout
                 return const ResponsiveLayout(
-                  MobileScreenLayout: MobileLayout(),
-                  WebScreenLayout: WebLayout(),
+                  mobileScreenLayout: MobileScreenLayout(),
+                  webScreenLayout: WebLayout(),
                 );
               } else if (snapshot.hasError) {
                 return Center(
-                  child: Text('Some internal error: ${snapshot.error}'),
+                  child: Text('${snapshot.error}'),
                 );
               }
             }
+
+            // means connection to future hasnt been made yet
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                ),
+                child: CircularProgressIndicator(),
               );
             }
-            return const LoginPage();
+
+            return const LoginScreen();
           },
         ),
       ),

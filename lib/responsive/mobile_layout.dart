@@ -1,31 +1,24 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:instagram_clone/providers/user_provider.dart';
 import 'package:instagram_clone/utils/Colors.dart';
-import 'package:instagram_clone/utils/global_vars.dart';
-import 'package:provider/provider.dart';
-import 'package:instagram_clone/models/user.dart' as model;
+import 'package:instagram_clone/utils/global_variable.dart';
 
-class MobileLayout extends StatefulWidget {
-  const MobileLayout({super.key});
+
+class MobileScreenLayout extends StatefulWidget {
+  const MobileScreenLayout({Key? key}) : super(key: key);
 
   @override
-  State<MobileLayout> createState() => _MobileLayoutState();
+  State<MobileScreenLayout> createState() => _MobileScreenLayoutState();
 }
 
-class _MobileLayoutState extends State<MobileLayout> {
-  String? username = "";
-
-  int _selectedpage = 2;
-  late PageController pageController;
+class _MobileScreenLayoutState extends State<MobileScreenLayout> {
+  int _page = 0;
+  late PageController pageController; // for tabs animation
 
   @override
   void initState() {
     super.initState();
     pageController = PageController();
-    getUserName(); //initState cannot be async
   }
 
   @override
@@ -34,71 +27,69 @@ class _MobileLayoutState extends State<MobileLayout> {
     pageController.dispose();
   }
 
-  void getUserName() async {
-    DocumentSnapshot snap = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(FirebaseAuth.instance.currentUser!.uid)
-        .get();
-    setState(() {
-      username = (snap.data() as Map<String, dynamic>)['username'];
-    });
-  }
-
-  void navigationTap(int page) {
-    pageController.jumpToPage(page);
-  }
-
   void onPageChanged(int page) {
     setState(() {
-      _selectedpage = page;
+      _page = page;
     });
+  }
+
+  void navigationTapped(int page) {
+    //Animating Page
+    pageController.jumpToPage(page);
   }
 
   @override
   Widget build(BuildContext context) {
-    model.User user = Provider.of<UserProvider>(context).getUser;
     return Scaffold(
       body: PageView(
-        physics: const NeverScrollableScrollPhysics(),
         controller: pageController,
         onPageChanged: onPageChanged,
         children: homeScreenItems,
       ),
       bottomNavigationBar: CupertinoTabBar(
         backgroundColor: mobileBackgroundColor,
-        onTap: navigationTap,
-        items: [
+        items: <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(
               Icons.home,
-              color: _selectedpage == 0 ? Colors.white : Colors.grey,
+              color: (_page == 0) ? primaryColor : secondaryColor,
             ),
+            label: '',
+            backgroundColor: primaryColor,
           ),
           BottomNavigationBarItem(
-            icon: Icon(
-              Icons.search,
-              color: _selectedpage == 1 ? Colors.white : Colors.grey,
-            ),
-          ),
+              icon: Icon(
+                Icons.search,
+                color: (_page == 1) ? primaryColor : secondaryColor,
+              ),
+              label: '',
+              backgroundColor: primaryColor),
+          BottomNavigationBarItem(
+              icon: Icon(
+                Icons.add_circle,
+                color: (_page == 2) ? primaryColor : secondaryColor,
+              ),
+              label: '',
+              backgroundColor: primaryColor),
           BottomNavigationBarItem(
             icon: Icon(
-              Icons.add_circle_outline,
-              color: _selectedpage == 2 ? Colors.white : Colors.grey,
+              Icons.favorite,
+              color: (_page == 3) ? primaryColor : secondaryColor,
             ),
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(
-              Icons.movie_creation_outlined,
-              color: _selectedpage == 3 ? Colors.white : Colors.grey,
-            ),
+            label: '',
+            backgroundColor: primaryColor,
           ),
           BottomNavigationBarItem(
             icon: Icon(
               Icons.person,
-              color: _selectedpage == 4 ? Colors.white : Colors.grey,
+              color: (_page == 4) ? primaryColor : secondaryColor,
             ),
+            label: '',
+            backgroundColor: primaryColor,
           ),
         ],
+        onTap: navigationTapped,
+        currentIndex: _page,
       ),
     );
   }
